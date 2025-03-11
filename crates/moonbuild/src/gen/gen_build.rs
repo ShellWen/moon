@@ -869,7 +869,7 @@ pub fn gen_n2_build_state(
     #[cfg(unix)]
     let mut runtime_so_path = None;
     #[cfg(windows)]
-    let runtime_so_path = None;
+    let runtime_so_path: Option<String> = None;
 
     if is_native_backend {
         let (build, path) = gen_compile_runtime_command(&mut graph, target_dir);
