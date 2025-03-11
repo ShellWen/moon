@@ -940,10 +940,11 @@ pub fn set_native_backend_link_flags(
             if target_backend == Some(TargetBackend::Native) {
                 // check if c compiler exists in PATH
                 #[cfg(unix)]
-                let fast_cc =
-                    run_mode == RunMode::Test && target_backend == Some(TargetBackend::Native);
+                let mut fast_cc = run_mode == RunMode::Test
+                    && target_backend == Some(TargetBackend::Native)
+                    && !release;
                 #[cfg(windows)]
-                let fast_cc = false;
+                let mut fast_cc = false;
                 #[cfg(unix)]
                 let compiler = "cc";
                 #[cfg(windows)]
@@ -986,6 +987,24 @@ pub fn set_native_backend_link_flags(
                 let mut link_configs = HashMap::new();
 
                 let all_pkgs = module.get_all_packages();
+
+                // do a pre-check to ensure that enabling fast cc mode (using tcc for debug testing)
+                // will not break the user's expectation on their control over
+                // c compilers and flags
+                for (_, pkg) in all_pkgs {
+                    let existing_native = pkg.link.as_ref().and_then(|link| link.native.as_ref());
+                    match existing_native {
+                        Some(n) => {
+                            fast_cc = fast_cc
+                                && n.cc.is_none()
+                                && n.cc_flags.is_none()
+                                && n.cc_link_flags.is_none()
+                                && n.native_stub_deps.is_none();
+                        }
+                        None => (),
+                    }
+                }
+
                 for (_, pkg) in all_pkgs {
                     let existing_native = pkg.link.as_ref().and_then(|link| link.native.as_ref());
 

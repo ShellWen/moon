@@ -876,6 +876,10 @@ pub fn gen_n2_build_state(
         graph.add_build(build)?;
         runtime_o_path = path;
 
+        // we have a weaker fast cc mode test here, since it's just
+        // building the shared runtime, and will not have problems
+        // more than an unused dynamic library if following tests
+        // on fast cc mode failed.
         #[cfg(unix)]
         if is_native_backend_and_fast_cc_mode {
             let (build, path) = gen_compile_shared_runtime_command(&mut graph, target_dir);

@@ -1100,6 +1100,10 @@ pub fn gen_n2_runtest_state(
 
     let is_native_backend = moonc_opt.link_opt.target_backend == TargetBackend::Native;
 
+    // we have a weaker fast cc mode test here, since it's just
+    // building the shared runtime, and will not have problems
+    // more than an unused dynamic library if following tests
+    // on fast cc mode failed.
     #[cfg(unix)]
     let is_native_backend_and_fast_cc_mode = is_native_backend
         && moonbuild_opt.run_mode == moonutil::common::RunMode::Test
