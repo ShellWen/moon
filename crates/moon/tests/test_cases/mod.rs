@@ -7756,6 +7756,8 @@ fn test_use_cc_for_native_release() {
                 cc ./target/native/release/test/lib/lib.internal_test.c ./target/native/release/test/runtime.o -I$MOON_HOME/include -O2 $MOON_HOME/lib/libmoonbitrun.o -fwrapv -fno-strict-aliasing -lm -o ./target/native/release/test/lib/lib.internal_test.exe
             "#]],
         );
+
+        // use tcc for debug test
         check(
             get_stdout(
                 &dir,
