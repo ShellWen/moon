@@ -42,8 +42,8 @@ use n2::load::State;
 use n2::smallmap::SmallMap;
 
 use crate::gen::gen_build::{
-    gen_compile_exe_command, gen_compile_runtime_command, gen_compile_stub_command,
-    gen_link_exe_command,
+    gen_archive_stub_to_static_lib_command, gen_compile_exe_command, gen_compile_runtime_command,
+    gen_compile_stub_command, gen_link_exe_command,
 };
 use crate::gen::n2_errors::{N2Error, N2ErrorKind};
 use crate::gen::{coverage_args, MiAlias};
@@ -1133,10 +1133,11 @@ pub fn gen_n2_runtest_state(
     if is_native_backend {
         for item in input.compile_stub_items.iter() {
             let builds = gen_compile_stub_command(&mut graph, item, moonc_opt);
-            for (build, fid) in builds {
+            for (build, _) in builds {
                 graph.add_build(build)?;
-                default.push(fid);
             }
+            let (build, _) = gen_archive_stub_to_static_lib_command(&mut graph, item);
+            graph.add_build(build)?;
         }
     }
 

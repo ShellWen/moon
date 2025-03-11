@@ -67,6 +67,7 @@ pub const MOD_DIR: &str = "$mod_dir";
 pub const PKG_DIR: &str = "$pkg_dir";
 
 pub const O_EXT: &str = if cfg!(windows) { "obj" } else { "o" };
+pub const A_EXT: &str = if cfg!(windows) { "lib" } else { "a" };
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PatchJSON {
@@ -1025,16 +1026,13 @@ pub fn set_native_backend_link_flags(
                         .unwrap()
                         .iter()
                         .for_each(|(_, pkg)| {
-                            if let Some(ref stub_files) = pkg.native_stub {
-                                native_stub_o.extend(stub_files.iter().map(|f| {
+                            if pkg.native_stub.is_some() {
+                                native_stub_o.push(
                                     pkg.artifact
-                                        .parent()
-                                        .unwrap()
-                                        .join(f)
-                                        .with_extension(O_EXT)
+                                        .with_file_name(format!("lib{}.{}", pkg.last_name(), A_EXT))
                                         .display()
-                                        .to_string()
-                                }));
+                                        .to_string(),
+                                );
                             }
                         });
 
