@@ -67,6 +67,13 @@ pub const MOD_DIR: &str = "$mod_dir";
 pub const PKG_DIR: &str = "$pkg_dir";
 
 pub const O_EXT: &str = if cfg!(windows) { "obj" } else { "o" };
+pub const DYN_EXT: &str = if cfg!(windows) {
+    "dll"
+} else if cfg!(target_os = "macos") {
+    "dylib"
+} else {
+    "so"
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PatchJSON {
@@ -933,6 +940,11 @@ pub fn set_native_backend_link_flags(
             if target_backend == Some(TargetBackend::Native) {
                 // check if c compiler exists in PATH
                 #[cfg(unix)]
+                let fast_cc =
+                    run_mode == RunMode::Test && target_backend == Some(TargetBackend::Native);
+                #[cfg(windows)]
+                let fast_cc = false;
+                #[cfg(unix)]
                 let compiler = "cc";
                 #[cfg(windows)]
                 let compiler = "cl";
@@ -944,6 +956,14 @@ pub fn set_native_backend_link_flags(
 
                 // libmoonbitrun.o should under $MOON_HOME/lib
                 let libmoonbitrun_path = moon_home.join("lib").join("libmoonbitrun.o");
+
+                let get_fast_cc_flags = || -> Option<String> {
+                    return Some(format!(
+                        "-I{} -L{} -DMOONBIT_NATIVE_NO_SYS_HEADER",
+                        moon_include_path.display(),
+                        moon_lib_path.display()
+                    ));
+                };
 
                 let get_default_cc_flags = || -> Option<String> {
                     #[cfg(unix)]
@@ -970,6 +990,14 @@ pub fn set_native_backend_link_flags(
                     let existing_native = pkg.link.as_ref().and_then(|link| link.native.as_ref());
 
                     let mut native_config = match existing_native {
+                        #[cfg(unix)]
+                        _ if fast_cc => crate::package::NativeLinkConfig {
+                            exports: None,
+                            cc: Some("tcc".to_string()),
+                            cc_flags: get_fast_cc_flags(),
+                            cc_link_flags: None,
+                            native_stub_deps: None,
+                        },
                         Some(n) => crate::package::NativeLinkConfig {
                             exports: n.exports.clone(),
                             cc: n.cc.clone().or(Some(compiler.to_string())),
